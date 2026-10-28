@@ -52,11 +52,11 @@ def validate_request(body: Any) -> dict[str, Any]:
     _refs(body, "productImages")
     if kind == "image":
         _ref(body.get("sourceImage"), "sourceImage")
-        for key in ("requirement", "ratio", "imageModel"):
+        for key in ("requirement", "ratio", "imageModel", "textModel"):
             _nonempty(body, key)
     else:
         _ref(body.get("sourceVideo"), "sourceVideo")
-        for key in ("productDescription", "videoModel"):
+        for key in ("productDescription", "videoModel", "textModel"):
             _nonempty(body, key)
         _refs(body, "referenceAudios", 3)
         if body.get("replicationMode", "partial") not in {"partial", "full"}:
