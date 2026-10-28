@@ -9,7 +9,7 @@
 | 创建 | `POST /api/v1/viral-replications`，`Idempotency-Key` 请求头 | `create_viral_replication`，`idempotencyKey` 参数 |
 | 查询 | `GET /api/v1/viral-replications/:id`，可带 `cursor` | `get_viral_replication`，`batchTaskId`、可选 `cursor` |
 
-Bearer Key 创建需要 `generation:viral:create`，查询需要 `generation:read`。图片/视频创建分别使用 `viral_image_replication` / `viral_video_replication` 操作做幂等。同一用户、操作、幂等键和请求体只生成一次父批任务；相同键而请求体不同返回 409。
+有效且启用的 Bearer Key 默认可调用全部已开放的 Gateway 能力，无需选择或校验 Scope。图片/视频创建分别使用 `viral_image_replication` / `viral_video_replication` 操作做幂等。同一用户、操作、幂等键和请求体只生成一次父批任务；相同键而请求体不同返回 409。
 
 ## 图片请求
 

@@ -53,7 +53,7 @@ class ViralReplicationTests(unittest.TestCase):
             process = subprocess.run(
                 [sys.executable, str(SCRIPTS / "create_viral_replication.py"),
                  "--request-file", str(request_file), "--idempotency-key", "12345678", "--dry-run"],
-                capture_output=True, text=True, check=True,
+                capture_output=True, text=True, encoding="utf-8", check=True,
                 env={**os.environ, "BAOLIANGXIA_AGENT_GATEWAY_BASE_URL": "https://example.test",
                      "BAOLIANGXIA_AGENT_GATEWAY_API_KEY": "", "PYTHONUTF8": "1"},
             )

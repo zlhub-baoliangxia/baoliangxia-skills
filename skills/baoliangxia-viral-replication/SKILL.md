@@ -13,7 +13,7 @@ description: Use when the user asks to复刻爆款图片或视频、替换产品
 
 ## 首次使用
 
-需要 Python 3 和环境变量 `BAOLIANGXIA_AGENT_GATEWAY_API_KEY`。若用户还没有 Key：到 [爆量匣](https://baoliangxia.com/) 注册或登录 → 左下角头像 → API/CLI → 创建具备“爆款复刻”权限的 Key。Key 只从环境变量读取，不写入命令、项目文件、日志或回复。默认服务地址是 `https://baoliangxia.com/`；仅在用户给出其他部署时使用 `BAOLIANGXIA_AGENT_GATEWAY_BASE_URL` 或 `--base-url`。
+需要 Python 3 和环境变量 `BAOLIANGXIA_AGENT_GATEWAY_API_KEY`。若用户还没有 Key：到 [爆量匣](https://baoliangxia.com/) 注册或登录 → 左下角头像 → API/CLI → 创建 API Key（默认可调用全部已开放能力）。Key 只从环境变量读取，不写入命令、项目文件、日志或回复。默认服务地址是 `https://baoliangxia.com/`；仅在用户给出其他部署时使用 `BAOLIANGXIA_AGENT_GATEWAY_BASE_URL` 或 `--base-url`。
 
 ## 选择路径
 
