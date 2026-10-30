@@ -1,13 +1,14 @@
-# 爆款复刻网关接口合约（待部署）
+# 爆款复刻网关接口合约
 
-与 CanvasMind `docs/superpowers/specs/2026-10-28-agent-gateway-viral-replication-design.md` 对应。新接口截至 2026-10-28 尚未实现；服务端上线前仅可做本地请求校验。
+与 CanvasMind Agent Gateway 的爆款复刻创建/查询实现对应。实际调用前确认目标部署有该 REST 路由或 MCP Tool；目标返回 404 时停止，不改走普通生成接口。
 
 ## REST 与 MCP
 
 | 动作 | REST | MCP |
 | --- | --- | --- |
 | 创建 | `POST /api/v1/viral-replications`，`Idempotency-Key` 请求头 | `create_viral_replication`，`idempotencyKey` 参数 |
-| 查询 | `GET /api/v1/viral-replications/:id`，可带 `cursor` | `get_viral_replication`，`batchTaskId`、可选 `cursor` |
+| 查询 | `GET /api/v1/viral-replications/:id`，可带 `cursor` | `get_viral_replication`，`id`、可选 `cursor` |
+| 拼接 | `POST /api/v1/viral-replications/:id/merge/:groupIndex` | `merge_viral_replication`，`id`、`groupIndex` |
 
 有效且启用的 Bearer Key 默认可调用全部已开放的 Gateway 能力，无需选择或校验 Scope。图片/视频创建分别使用 `viral_image_replication` / `viral_video_replication` 操作做幂等。同一用户、操作、幂等键和请求体只生成一次父批任务；相同键而请求体不同返回 409。已绑定的同键重放直接返回原任务 ID，不因之后模型配置或素材状态变化而重新提交。10 分钟有效期只约束待完成上传票据；已完成的 `uploadId` 没有独立到期时间，若对象存储已不可用，新请求仍会被拒绝。
 
@@ -22,11 +23,11 @@
   "count": 2,
   "ratio": "1:1",
   "imageModel": "doubao-seedream-4.5",
-  "textModel": "当前可选聊天模型的标识"
+  "textModel": "doubao-seed-2.1-pro"
 }
 ```
 
-必填：`type/sourceImage/requirement/count/ratio/imageModel/textModel`。可选：`productImages`、`industry`、`resolution`、`promptOptimization`。图片 `promptOptimization` 为 `{ "originalDescription": "...", "optimizedDescription": "...", "traceId": "..." }`，前两项必填，最后一项可选；`requirement` 是用户确认后的最终文本。`count` 为 1～100 的整数。图片和文本模型标识必须能从当前公开目录唯一解析；缺少文本模型会使现有图片执行器跳过参考图分析，因此新接口要求显式传入。
+必填：`type/sourceImage/requirement/count/ratio/imageModel/textModel`。skill 在用户未指定时补 `imageModel=doubao-seedream-4.5`、`textModel=doubao-seed-2.1-pro`；图片复刻暂时只支持文本模型 `doubao-seed-2.1-pro`，用户指定其他文本模型时停止提交，不静默替换。未指定比例时使用 `1:1`。图片比例可选值为 `1:1`、`4:3`、`3:4`、`9:16`、`16:9`。可选：`productImages`、`industry`、`resolution`、`promptOptimization`。`resolution` 未指定时省略，使用模型配置的默认档位。`requirement` 是用户给出的生成要求。默认不传 `promptOptimization`，由服务端按 `requirement` 优化。只有调用方已经确认优化稿、且不要服务端再改写时才传：`{ "originalDescription": "...", "optimizedDescription": "...", "traceId": "..." }`，前两项必填且非空，`traceId` 可选。`count` 为 1～100 的整数。`industry` 只接受 `ecommerce`、`beauty`、`telecom`、`netservice`，没有对应值就省略。图片和文本模型标识必须能从当前公开目录唯一解析；可传 `modelKey` 或准确 `selectionKey`。缺少文本模型会使图片执行器跳过参考图分析，因此请求中必须显式提供；由 skill 补默认值，不是 Gateway 自动默认。
 
 ## 视频请求
 
@@ -38,18 +39,22 @@
   "productDescription": "产品卖点与复刻要求",
   "count": 1,
   "videoModel": "doubao-seedance-2.0",
-  "textModel": "当前可选聊天模型的标识",
+  "textModel": "doubao-seed-2.1-pro",
   "replicationMode": "partial"
 }
 ```
 
-必填：`type/sourceVideo/productDescription/count/videoModel/textModel`。可选：`productImages`、`referenceAudios`（最多 3 条）、`industry`、`resolution`、`replicationMode`（`partial|full`）、`strategies`（三个布尔值 `hotOpening/ownPattern/industryFission`）、`sourceVideoMetadata`（正数 `durationSeconds/width/height`）、`promptOptimization`。视频 `promptOptimization` 为 `{ "originalDescription": "...", "outline": "...", "outlineTraceId": "..." }`，前两项必填，最后一项可选；`productDescription` 是用户确认后的最终大纲。`count` 为 1～20 的整数，省略 `replicationMode` 使用 `partial`。完全复刻的源片时长/尺寸必须由服务端可信探测核对。Gateway 每套视频最多派发 40 个片段，超限不会继续派发；已发生的反推消耗按真实用量处理。
+必填：`type/sourceVideo/productDescription/count/videoModel/textModel`。skill 在用户未指定时补 `videoModel=doubao-seedance-2.0`、`textModel=doubao-seed-2.1-pro`；视频复刻暂时只支持文本模型 `doubao-seed-2.1-pro`，用户指定其他文本模型时停止提交，不静默替换。可选：`productImages`、`referenceAudios`（最多 3 条）、`industry`、`resolution`、`replicationMode`（`partial` 动作复刻 | `full` 高度复刻）。`resolution` 未指定时省略，使用模型配置的默认档位。`productDescription` 是融合使用的最终文案，不要再传优化前原文或大纲。`count` 为 1～20 的整数，省略 `replicationMode` 使用 `partial`。`industry` 与图片相同，只接受 `ecommerce`、`beauty`、`telecom`、`netservice`。源片时长和宽高由服务端探测上传文件。`strategies`、`promptOptimization`、`sourceVideoMetadata` 以及任何未知字段都会被拒绝。高度复刻只允许 skill 主文档所列白名单中的 7 个模型；`viduq4-preview`（界面名称 `vidu-q4-preview`）不支持高度复刻。Gateway 每套视频最多派发 40 个片段，超限不会继续派发；已发生的反推消耗仍按真实用量处理。
+
+当前公开目录的视频模型分辨率：`doubao-seedance-2.5` 为 `480p/720p/1080p`；`MiniMax-H3` 为 `768P/2K`；`wan3.0-video` 与 `wan3.0-video-prime` 为 `480P/720P/1080P`；`doubao-seedance-2.0` 为 `480p/720p/1080p`；`doubao-seedance-2.0-fast` 与 `doubao-seedance-2.0-mini` 为 `480p/720p`；`viduq4-preview` 为 `540p/720p/1080p/2K/4K`；`vidu-short_drama_ads_fast` 为 `720p`。目录配置会变化，提交前以目标部署返回的模型目录为准。
 
 ## 响应与状态
 
 创建成功为 HTTP 202：`{ "id":"<batchTaskId>", "object":"viral_replication", "type":"image|video", "status":"pending", "createdAt":"<ISO>", "requestId":"req_xxx" }`。重放返回原 ID，REST 另带 `Idempotency-Replayed: true`。
 
 查询响应包含 `id/object/type/status/createdAt/updatedAt/progress/outputs/error`。状态 `pending|running|completed|partial|failed|stopped`，后四项为终态。`progress` 图片给 `targetCount/completedCount/failedCount`；视频另给 `setsTotal/setsCompleted` 与 `segmentsTotal/segmentsCompleted/segmentsFailed`。`setsCompleted` 只计已转存并持久化的合并成片；片段完成但尚未合并时不增加。`outputs` 只含已转存到对象存储的媒体，带临时下载 `url`。视频输出应标明成片或片段及 `groupIndex`；图片带槽位序号。最多 100 项，更多时返回 `nextCursor`，用 `?cursor=...` 读取后续页。不存在、跨用户或非 Gateway 复刻任务统一 404。
+
+拼接接口只允许当前用户通过 Agent Gateway 创建的视频复刻任务。只有目标套全部片段进入终态（成功、失败或停止）后才允许拼接；有产物的成功片段按 `segIndex` 升序合成，失败片段会被跳过。接口同步等待并持久化结果，返回 `id/groupIndex/status/cached`；成功后再次查询批任务以取得临时下载 URL 和 `role=merged`。请求超时后先查询原任务确认是否已保存成片；仍无结果时可以本地用 FFmpeg 拼接下载的片段。重复调用已成功拼接的套会返回缓存状态，不会重新生成片段。
 
 错误体沿用 Gateway：`{ "error": { "code": "...", "message": "...", "requestId": "req_xxx", "retryable": false } }`。遇到 429 按 `retryAfterSeconds` 等待；网络不确定时只重放原幂等键和原请求。404 新路由或缺少新 MCP Tool 表示部署未就绪，停止。
 

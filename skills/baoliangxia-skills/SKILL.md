@@ -1,6 +1,11 @@
 ---
-name: baoliangxia-skills
+name: baoliangxia-skill
 description: 爆量匣 (baoliangxia) AI 生图、生视频技能 - 通过 Agent Gateway 调用 Seedream、Seedance、GPT Image 2、Kling、Wan、MiniMax-H3、Vidu、HappyHorse、即梦视频等模型。覆盖场景：文生图、图生图、参考图生成、文生视频、图生视频、首尾帧、参考视频/音频生成、数字人口播、对口型（lip-sync）、视频超分/提升清晰度、剧集带货短剧广告、本地素材上传、查询生成进度、下载生成结果、配置 API Key。当用户提到爆量匣、baoliangxia，或要求"画一张/生成一张图""做个海报""生成一段视频/广告片""把这张图做成视频""让这个人物说话""提升视频清晰度""查一下生成状态"时都应触发。Use when the user asks to generate, create, draw, edit, modify, upscale, lip-sync, or check any image, video, or media asset through baoliangxia/爆量匣, including local media upload, generation status, downloads, API-key setup, or garbled Chinese REST prompts.
+version: 1.0.3
+display_name: baoliangxia-skill
+display_name_en: Baoliangxia · AI Image & Video
+description_zh: 通过爆量匣（baoliangxia）Agent Gateway 生成图片与视频，覆盖文生图、图生图、参考图/参考视频/参考音频驱动、首尾帧、数字人口播与对口型、视频超分、剧集带货短剧广告，并支持本地素材上传、生成进度查询与结果下载。默认图片模型 doubao-seedream-4.5，默认视频模型 doubao-seedance-2.0。
+description_en: Generate images and videos through the Baoliangxia Agent Gateway - text-to-image, image-to-image, reference-image/video/audio driven generation, first/last-frame video, digital-human talking head and lip-sync, video upscaling, and short-drama ads, with local asset upload, generation status polling and result download. Defaults are doubao-seedream-4.5 for images and doubao-seedance-2.0 for videos.
 user-invocable: true
 metadata:
   {
@@ -17,9 +22,9 @@ metadata:
   }
 ---
 
-# baoliangxia-skills
+# baoliangxia-skill
 
-Use the bundled Python scripts to call baoliangxia-skills. Preserve the user's prompt unless they explicitly request rewriting.
+Use the bundled Python scripts to call baoliangxia-skill. Preserve the user's prompt unless they explicitly request rewriting.
 
 ## First-use guidance
 
@@ -44,8 +49,8 @@ The same steps apply on their own when a later request finds `BAOLIANGXIA_AGENT_
 
 ### Agent-native examples
 
-- “用 baoliangxia-skills 生成一张雨夜霓虹街道的电影感插画。”
-- “用 baoliangxia-skills 生成一段 5 秒的产品广告视频。”
+- “用 baoliangxia-skill 生成一张雨夜霓虹街道的电影感插画。”
+- “用 baoliangxia-skill 生成一段 5 秒的产品广告视频。”
 - “把这张图片作为参考，生成一张同风格的海报。”
 
 Keep the user-facing response focused on what to do in the Agent. Do not include terminal instructions or implementation details unless the user specifically asks for them. The create-key steps are required in that reply whenever the user has no key; they are not implementation details.

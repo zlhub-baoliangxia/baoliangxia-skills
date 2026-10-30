@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
 
-COMMON = {"type", "productImages", "industry", "textModel", "resolution", "promptOptimization", "count"}
-IMAGE = COMMON | {"sourceImage", "requirement", "ratio", "imageModel"}
+COMMON = {"type", "productImages", "industry", "textModel", "resolution", "count"}
+INDUSTRIES = {"ecommerce", "beauty", "telecom", "netservice"}
+IMAGE = COMMON | {"sourceImage", "requirement", "ratio", "imageModel", "promptOptimization"}
 VIDEO = COMMON | {
-    "sourceVideo", "referenceAudios", "productDescription", "videoModel",
-    "replicationMode", "strategies", "sourceVideoMetadata",
+    "sourceVideo", "referenceAudios", "productDescription", "videoModel", "replicationMode",
 }
 
 
@@ -61,23 +60,15 @@ def validate_request(body: Any) -> dict[str, Any]:
         _refs(body, "referenceAudios", 3)
         if body.get("replicationMode", "partial") not in {"partial", "full"}:
             raise ValueError("replicationMode must be partial or full")
-        if "strategies" in body:
-            strategies = body["strategies"]
-            names = {"hotOpening", "ownPattern", "industryFission"}
-            if not isinstance(strategies, dict) or set(strategies) - names or any(type(value) is not bool for value in strategies.values()):
-                raise ValueError("strategies must contain only hotOpening/ownPattern/industryFission booleans")
-        if "sourceVideoMetadata" in body:
-            meta = body["sourceVideoMetadata"]
-            names = {"durationSeconds", "width", "height"}
-            if not isinstance(meta, dict) or not meta or set(meta) - names or any(type(v) not in (int, float) or not math.isfinite(v) or v <= 0 for v in meta.values()):
-                raise ValueError("sourceVideoMetadata values must be positive numbers")
     for key in ("industry", "textModel", "resolution"):
         if key in body:
             _nonempty(body, key)
-    if "promptOptimization" in body:
+    if "industry" in body and body["industry"] not in INDUSTRIES:
+        raise ValueError("industry must be ecommerce, beauty, telecom, or netservice")
+    if kind == "image" and "promptOptimization" in body:
         value = body["promptOptimization"]
-        required = {"originalDescription", "optimizedDescription"} if kind == "image" else {"originalDescription", "outline"}
-        allowed = required | ({"traceId"} if kind == "image" else {"outlineTraceId"})
+        required = {"originalDescription", "optimizedDescription"}
+        allowed = required | {"traceId"}
         if not isinstance(value, dict) or not required.issubset(value) or set(value) - allowed:
             raise ValueError("promptOptimization has missing or unsupported fields")
         if any(not isinstance(item, str) or not item.strip() for item in value.values()):

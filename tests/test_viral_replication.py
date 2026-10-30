@@ -21,12 +21,13 @@ class ViralReplicationTests(unittest.TestCase):
         image = {
             "type": "image", "sourceImage": {"uploadId": "upl_source"},
             "requirement": "替换产品", "count": 2, "ratio": "1:1",
-            "imageModel": "doubao-seedream-4.5",
+            "imageModel": "doubao-seedream-4.5", "textModel": "chat-model",
         }
         video = {
             "type": "video", "sourceVideo": {"uploadId": "upl_video"},
             "productDescription": "产品广告", "count": 20,
-            "videoModel": "doubao-seedance-2.0", "replicationMode": "full",
+            "videoModel": "doubao-seedance-2.0", "textModel": "chat-model",
+            "replicationMode": "full",
         }
         self.assertIs(validate_request(image), image)
         self.assertIs(validate_request(video), video)
@@ -38,14 +39,37 @@ class ViralReplicationTests(unittest.TestCase):
             validate_request({**video, "sourceVideo": "https://example.com/video.mp4"})
         with self.assertRaisesRegex(ValueError, "type must"):
             validate_request({**image, "type": ["image"]})
-        with self.assertRaisesRegex(ValueError, "sourceVideoMetadata"):
-            validate_request({**video, "sourceVideoMetadata": {"durationSeconds": float("nan")}})
+        with self.assertRaisesRegex(ValueError, "industry"):
+            validate_request({**video, "industry": "电商"})
+        for removed in (
+            {"sourceVideoMetadata": {"durationSeconds": 12, "width": 1080, "height": 1920}},
+            {"strategies": {"hotOpening": True, "ownPattern": True, "industryFission": True}},
+            {"promptOptimization": {"originalDescription": "原文", "outline": "大纲"}},
+        ):
+            with self.assertRaisesRegex(ValueError, "unsupported field"):
+                validate_request({**video, **removed})
+
+    def test_missing_text_model_is_rejected(self):
+        image = {
+            "type": "image", "sourceImage": {"uploadId": "upl_source"},
+            "requirement": "替换产品", "count": 1, "ratio": "1:1",
+            "imageModel": "doubao-seedream-4.5",
+        }
+        video = {
+            "type": "video", "sourceVideo": {"uploadId": "upl_video"},
+            "productDescription": "产品广告", "count": 1,
+            "videoModel": "doubao-seedance-2.0",
+        }
+        with self.assertRaisesRegex(ValueError, "textModel"):
+            validate_request(image)
+        with self.assertRaisesRegex(ValueError, "textModel"):
+            validate_request(video)
 
     def test_dry_run_needs_no_key_and_does_not_send(self):
         body = {
             "type": "image", "sourceImage": {"uploadId": "upl_source"},
             "requirement": "替换产品", "count": 1, "ratio": "1:1",
-            "imageModel": "doubao-seedream-4.5",
+            "imageModel": "doubao-seedream-4.5", "textModel": "chat-model",
         }
         with tempfile.TemporaryDirectory() as directory:
             request_file = Path(directory) / "request.json"
