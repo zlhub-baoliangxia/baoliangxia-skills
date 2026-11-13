@@ -181,8 +181,7 @@ MODELS: dict[str, ModelSpec] = {
         "videos", "references/models/video-sr.md", resolutions=("720p", "1080p", "2k", "4k"),
         max_reference_videos=1, default_resolution="720p",
         unavailable_reason=(
-            "Agent Gateway 的通用视频创建接口尚不能传递 video-sr 所需的 superResolution 元数据；"
-            "直接提交会在执行阶段失败"
+            "video-sr 仅用于视频提升画质，不能用于普通视频生成；请改用 scripts/create_video_super_resolution.py"
         ),
     ),
     "vidu": ModelSpec(
@@ -240,6 +239,7 @@ def catalog_rows() -> list[dict[str, object]]:
             "kind": spec.kind,
             "reference": spec.reference,
             "available": spec.unavailable_reason is None,
+            "availabilityNote": spec.unavailable_reason,
             "defaultAspectRatio": spec.default_ratio,
             "defaultResolution": spec.default_resolution,
             "supportsOutputCount": spec.max_outputs is not None,

@@ -54,6 +54,9 @@ def main():
     upload_url = ticket.get("host") or ticket.get("uploadUrl") or ticket.get("url")
     if not upload_id or not upload_url:
         raise GatewayError("Upload ticket did not include uploadId and host/uploadUrl")
+    upload_url = str(upload_url)
+    if "://" not in upload_url:
+        upload_url = f"https://{upload_url.lstrip('/')}"
     send_upload(
         upload_url,
         str(ticket.get("method") or "POST"),

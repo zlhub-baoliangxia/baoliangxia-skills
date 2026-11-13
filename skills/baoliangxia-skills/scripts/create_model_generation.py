@@ -209,7 +209,7 @@ def prepare_generation(args: argparse.Namespace) -> tuple[ModelSpec, dict]:
     if not args.prompt:
         raise ValueError("prompt is required")
     if spec.unavailable_reason:
-        raise ValueError(f"Agent Gateway unavailable for {args.model}: {spec.unavailable_reason}")
+        raise ValueError(f"Model {args.model} is not available for ordinary generation: {spec.unavailable_reason}")
     apply_model_defaults(args, spec)
     validate_common(args, spec)
     payload = build_payload(args, spec)

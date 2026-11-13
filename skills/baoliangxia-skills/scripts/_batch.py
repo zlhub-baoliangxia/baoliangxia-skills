@@ -58,7 +58,8 @@ def new_task(index: int, job: dict, count: int) -> dict:
     payload.pop('n', None)
     if spec.max_outputs:
         payload['n'] = count
-    return {'jobIndex': index, 'endpoint': f'/api/v1/{spec.kind}/generations',
+    endpoint = job.get('endpoint') or f'/api/v1/{spec.kind}/generations'
+    return {'jobIndex': index, 'endpoint': endpoint,
             'payload': payload, 'requestedCount': count,
             'idempotencyKey': str(uuid.uuid4()), 'status': 'prepared'}
 
@@ -87,7 +88,7 @@ def execute_batch(jobs: list[dict], output_dir: Path, *, concurrency=5,
         raise ValueError('批量目标总数必须为1–100')
     for job in jobs:
         request_capacity(job)
-        if MODELS[job['model']].unavailable_reason:
+        if MODELS[job['model']].unavailable_reason and not job.get('allow_unavailable'):
             raise ValueError('模型当前不可用')
     output_dir = Path(output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)

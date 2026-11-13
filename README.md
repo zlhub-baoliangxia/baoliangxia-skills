@@ -101,7 +101,7 @@ $env:BAOLIANGXIA_AGENT_GATEWAY_API_KEY = "your-api-key"
 | 图片   | `doubao-seedream-4.5` `doubao-seedream-5.0-lite` `doubao-seedream-5.0-pro` `zl-ooe-3.1-flash-image-t` `zl-pep-image-2-async` `zl-pep-image-2.5-flare-async` `zl-pep-image-2.5-sunburst-async` |
 | 视频   | `doubao-seedance-2.0` `doubao-seedance-2.0-fast` `doubao-seedance-2.0-mini` `doubao-seedance-2.5` `happyhorse-1.1` `jielan-video` `jielan-video-lite` `jielan-video-mini` `kling-v3-omni` `MiniMax-H3` `wan3.0-video` `wan3.0-video-prime` |
 | 爆款复刻 | 即将支持                                                                                                                                                                                                                                       |
-| 视频超分 | 即将支持                                                                                                                                                                                                                                       |
+| 视频超分 | 仅用于视频提升画质，使用 `skills/baoliangxia-skills/scripts/create_video_super_resolution.py` |
 
 > 以 `python3 skills/baoliangxia-skills/scripts/create_model_generation.py --list-models` 的输出为准。
 

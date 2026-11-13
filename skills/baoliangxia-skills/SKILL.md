@@ -1,7 +1,7 @@
 ---
 name: baoliangxia-skill
 description: 爆量匣 (baoliangxia) AI 生图、生视频技能 - 通过 Agent Gateway 调用 Seedream、Seedance、GPT Image 2、Kling、Wan、MiniMax-H3、Vidu、HappyHorse、即梦视频等模型。覆盖场景：文生图、图生图、参考图生成、文生视频、图生视频、首尾帧、参考视频/音频生成、数字人口播、对口型（lip-sync）、视频超分/提升清晰度、剧集带货短剧广告、本地素材上传、查询生成进度、下载生成结果、配置 API Key。当用户提到爆量匣、baoliangxia，或要求"画一张/生成一张图""做个海报""生成一段视频/广告片""把这张图做成视频""让这个人物说话""提升视频清晰度""查一下生成状态"时都应触发。Use when the user asks to generate, create, draw, edit, modify, upscale, lip-sync, or check any image, video, or media asset through baoliangxia/爆量匣, including local media upload, generation status, downloads, API-key setup, or garbled Chinese REST prompts.
-version: 1.0.4
+version: 1.0.6
 display_name: baoliangxia-skill
 display_name_en: Baoliangxia · AI Image & Video
 description_zh: 通过爆量匣（baoliangxia）Agent Gateway 生成图片与视频，覆盖文生图、图生图、参考图/参考视频/参考音频驱动、首尾帧、数字人口播与对口型、视频超分、剧集带货短剧广告，并支持本地素材上传、生成进度查询与结果下载。默认图片模型 doubao-seedream-4.5，默认视频模型 doubao-seedance-2.0。
@@ -26,7 +26,7 @@ metadata:
 
 Use the bundled Python scripts to call baoliangxia-skill. Preserve the user's prompt unless they explicitly request rewriting.
 
-For requests to replicate a viral image or video, including action replication or high-fidelity replication, follow the dedicated workflow in [viral-replication/SKILL.md](viral-replication/SKILL.md). Do not route those requests through ordinary generation.
+For requests to replicate a viral image or video, including action replication or high-fidelity replication, use the dedicated sibling skill [baoliangxia-viral-replication](../baoliangxia-viral-replication/SKILL.md). Do not route those requests through ordinary image or video generation.
 
 ## First-use guidance
 
@@ -76,7 +76,7 @@ Read only the selected row's reference. Shared family references are intentional
 - Nano Banana 3.1 Flash → `zl-ooe-3.1-flash-image-t`
 - 剧集带货 / Vidu Short Ads → `vidu-short_drama_ads_fast`
 
-Every available row uses `scripts/create_model_generation.py "PROMPT" --model MODEL [options]`. Run `--list-models` for the machine-readable catalog. Add `--dry-run` to validate and inspect the exact endpoint and payload without reading credentials or making a network request.
+Every model available for ordinary image/video generation uses `scripts/create_model_generation.py "PROMPT" --model MODEL [options]`. Run `--list-models` for the machine-readable catalog. Add `--dry-run` to validate and inspect the exact endpoint and payload without reading credentials or making a network request. `video-sr` is a special route: it is only for video super-resolution, so `available: false` in this catalog means it cannot be used by the ordinary video-generation script; the dedicated super-resolution script is available.
 
 | Exact database model identifier | Read only this reference | Availability |
 |---|---|---|
@@ -97,7 +97,7 @@ Every available row uses `scripts/create_model_generation.py "PROMPT" --model MO
 | `jielan-video-mini` | `references/models/jielan-video.md` | available |
 | `kling-v3-omni` | `references/models/kling-v3-omni.md` | available |
 | `MiniMax-H3` | `references/models/minimax-h3.md` | available |
-| `video-sr` | `references/models/video-sr.md` | fail-closed until Gateway exposes SR metadata |
+| `video-sr` | `references/models/video-sr.md` | 仅用于视频超分；普通视频生成不可用。使用 `scripts/create_video_super_resolution.py` |
 | `vidu` | `references/models/vidu-solutions.md` | available for text-driven lip sync |
 | `vidu-short_drama_ads_fast` | `references/models/vidu-short-ads.md` | available |
 | `viduq2-pro` | `references/models/vidu-solutions.md` | available for text-driven digital human |
@@ -108,6 +108,24 @@ Every available row uses `scripts/create_model_generation.py "PROMPT" --model MO
 | `wan3.0-video-prime` | `references/models/wan3.0-video.md` | available |
 
 Do not substitute an upstream documentation name such as `gpt-image-2-async` or `zl-video` for the database identifier.
+
+## Video super-resolution
+
+`video-sr` 只能用于视频提升画质，不能用于文生视频、图生视频或把参考视频当普通生成素材。提升画质必须用 `scripts/create_video_super_resolution.py`，不能传给 `create_model_generation.py`。来源是已完成的视频生成记录、已完成上传，或本地视频文件，三者用不同参数，每条任务只带一个来源。
+
+- `--generation-id`、`--upload-id`、`--file` 可重复，按出现顺序合计 1～10 条。超过 10 条在本地直接报错，不上传、不提交。
+- `--target-resolution` 必填，只接受 `720p`、`1080p`、`2k`、`4k`（大小写不敏感）。能否向上由服务端判断，脚本不探测文件。
+- `--plan-key` 缺省 `general`。
+- `--new-session` / `--session-title` 沿用 **Generate-page session**。1 条直接提交；2 条及以上按 [references/batch-generation.md](references/batch-generation.md)：每条独立任务和独立幂等键，默认并发 5，只有第一条带会话字段并单独先提交，状态写入 `batch.json`，超时 6 小时。
+- 查询和下载沿用 `scripts/query_generation.py`。结果展示必须带 **会话** 行，标题取创建响应里的 `session.title`。
+
+```bash
+python3 {baseDir}/scripts/create_video_super_resolution.py \
+  --generation-id GENERATION_ID --target-resolution 1080p
+python3 {baseDir}/scripts/create_video_super_resolution.py \
+  --file /path/to/a.mp4 --file /path/to/b.mp4 --target-resolution 4k \
+  --new-session --session-title "活动A" --output-dir /absolute/path/sr_batch
+```
 
 ## Execution contract
 
@@ -255,6 +273,7 @@ For an uncertain retry of the same logical request, reuse the returned `idempote
 | Mistake | Correct behavior |
 |---|---|
 | Copying the upstream model name from a reference | Use the exact database identifier from the routing table |
+| Passing `video-sr` to `create_model_generation.py` | Use `scripts/create_video_super_resolution.py` |
 | Passing a resolution with the wrong case | Preserve the documented value exactly, such as `1080P` for Wan and `1080p` for Seedance |
 | Passing a control the Gateway cannot express | Stop and report the unavailable capability |
 | Copying a sample ratio or resolution when the user did not ask for one | Omit `--aspect-ratio` and `--resolution` and let the script apply the model default |
