@@ -29,6 +29,8 @@ description: Use when the user asks to复刻爆款图片或视频、动作复刻
 
 高度复刻只对这些视频模型提交：`doubao-seedance-2.0`、`doubao-seedance-2.0-fast`、`doubao-seedance-2.0-mini`、`doubao-seedance-2.5`、`MiniMax-H3`、`wan3.0-video`、`vidu-short-ads`。`vidu-q4-preview`（API modelKey：`viduq4-preview`）不支持高度复刻；可灵、HappyHorse、Vidu Q3，以及剧集带货里除 `vidu-short-ads` 以外的标识，也不能做高度复刻。用户指定了不支持的模型时说明原因，不改成动作复刻，也不换模型，除非用户确认。
 
+高度复刻（`replicationMode=full`）选了与源片不同的比例时，不转码深度片，直接作为参考视频提交。运镜对齐可能下降。
+
 ### 默认模型与可选项
 
 用户未指定模型时，在创建请求体前补入下列默认值。Gateway 的请求校验要求模型字段存在，不会替调用方填默认值：
@@ -55,21 +57,21 @@ description: Use when the user asks to复刻爆款图片或视频、动作复刻
 
 图片画面比例统一可选 `1:1`、`4:3`、`3:4`、`9:16`、`16:9`，不按图片模型区分。API 要求 `ratio`；用户未指定时使用界面默认 `1:1`。图片 `resolution` 可省略，让所选模型配置采用自己的默认档位。
 
-当前模型目录中可用于视频复刻的模型及分辨率：
+当前模型目录中可用于视频复刻的模型、分辨率与比例：
 
-| 界面名称 | API `videoModel` 值 | 可选 `resolution` |
-| --- | --- | --- |
-| `doubao-seedance-2.5` | `doubao-seedance-2.5` | `480p`、`720p`、`1080p` |
-| `MiniMax-H3` | `MiniMax-H3` | `768P`、`2K` |
-| `wan3.0-video` | `wan3.0-video` | `480P`、`720P`、`1080P` |
-| `wan3.0-video-prime` | `wan3.0-video-prime` | `480P`、`720P`、`1080P` |
-| `doubao-seedance-2.0`（默认） | `doubao-seedance-2.0` | `480p`、`720p`、`1080p` |
-| `doubao-seedance-2.0-fast` | `doubao-seedance-2.0-fast` | `480p`、`720p` |
-| `doubao-seedance-2.0-mini` | `doubao-seedance-2.0-mini` | `480p`、`720p` |
-| `vidu-q4-preview` | `viduq4-preview` | `540p`、`720p`、`1080p`、`2K`、`4K` |
-| `vidu-short-ads` | `vidu-short_drama_ads_fast` | `720p` |
+| 界面名称 | API `videoModel` 值 | 可选 `resolution` | 可选 `ratio` |
+| --- | --- | --- | --- |
+| `doubao-seedance-2.5` | `doubao-seedance-2.5` | `480p`、`720p`、`1080p` | `9:16`、`16:9`、`3:4`、`4:3`、`1:1` |
+| `MiniMax-H3` | `MiniMax-H3` | `768P`、`2K` | `9:16`、`16:9`、`4:3`、`3:4`、`1:1`、`21:9` |
+| `wan3.0-video` | `wan3.0-video` | `480P`、`720P`、`1080P` | `9:16`、`16:9`、`4:3`、`3:4`、`1:1` |
+| `wan3.0-video-prime` | `wan3.0-video-prime` | `480P`、`720P`、`1080P` | `9:16`、`16:9`、`4:3`、`3:4`、`1:1` |
+| `doubao-seedance-2.0`（默认） | `doubao-seedance-2.0` | `480p`、`720p`、`1080p` | `9:16`、`16:9`、`3:4`、`4:3`、`1:1` |
+| `doubao-seedance-2.0-fast` | `doubao-seedance-2.0-fast` | `480p`、`720p` | `9:16`、`16:9`、`3:4`、`4:3`、`1:1` |
+| `doubao-seedance-2.0-mini` | `doubao-seedance-2.0-mini` | `480p`、`720p` | `9:16`、`16:9`、`3:4`、`4:3`、`1:1` |
+| `vidu-q4-preview` | `viduq4-preview` | `540p`、`720p`、`1080p`、`2K`、`4K` | `16:9`、`9:16`、`1:1`、`3:4`、`4:3` |
+| `vidu-short-ads` | `vidu-short_drama_ads_fast` | `720p` | `16:9`、`9:16`、`3:4`、`4:3` |
 
-视频 `resolution` 未指定时省略，由所选模型配置应用自己的默认档位。可选模型与分辨率来自当前爆款复刻模型目录；目录可能随部署配置变化，提交前以目标部署的模型目录为准。
+视频 `resolution` 与 `ratio` 同为可选项，未指定时都省略。`resolution` 省略后由所选模型配置应用自己的默认档位。`ratio` 只能取该模型 `ratioOptions` 里的具体比例，不接受 `adaptive`；省略后服务端按源片真实宽高映射到该列表，读不到宽高时用列表第一项。不在列表内的比例返回 HTTP 400，消息为 `当前模型不支持该比例`，发生在预扣之前。同一次批任务的所有片段使用同一个比例。未保存比例的老任务行为完全不变。高度复刻（`replicationMode=full`）选了与源片不同的比例时，不转码深度片，直接作为参考视频提交，运镜对齐可能下降。上表比例已去掉 `adaptive`。可选模型、分辨率与比例来自当前爆款复刻模型目录；目录可能随部署配置变化，提交前以目标部署的模型目录为准。目录没有 `ratioOptions` 时，可选比例为 `16:9`、`9:16`、`4:3`、`3:4`、`1:1`。
 
 图片文案放在 `requirement`。默认不要传 `promptOptimization`，服务端会按该要求自己优化。只有用户已经确认一份优化稿、并且明确不要服务端再改写时，才附带 `promptOptimization`：`optimizedDescription` 用确认稿，`originalDescription` 用优化前原文，`traceId` 仅在已有那次优化记录时填写。
 
