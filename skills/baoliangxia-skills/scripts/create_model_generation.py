@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 
 from _common import GatewayError, fail, print_json, upload_ref
-from _generation import add_transport_args, append_if_present, submit, upload_refs
+from _generation import add_session_args, add_transport_args, append_if_present, session_fields, submit, upload_refs
 from _models import MODELS, ModelSpec, catalog_rows
 
 
@@ -32,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run", action="store_true",
         help="Validate arguments and print the endpoint/payload without authentication or network access",
     )
+    add_session_args(parser)
     add_transport_args(parser)
     return parser
 
@@ -212,6 +213,8 @@ def prepare_generation(args: argparse.Namespace) -> tuple[ModelSpec, dict]:
     apply_model_defaults(args, spec)
     validate_common(args, spec)
     payload = build_payload(args, spec)
+    # 图片分支在 build_payload 里提前返回，会话字段统一在这里补，图片和视频都生效。
+    payload.update(session_fields(args.new_session, args.session_title))
     return spec, payload
 
 

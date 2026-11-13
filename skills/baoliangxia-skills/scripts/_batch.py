@@ -37,13 +37,17 @@ def request_capacity(job: dict) -> int:
     return capacity
 
 
-def initial_tasks(jobs: list[dict]) -> list[dict]:
+def initial_tasks(jobs: list[dict], session: dict | None = None) -> list[dict]:
     tasks = []
     for index, job in enumerate(jobs):
         if MODELS[job['model']].max_outputs:
             tasks.append(new_task(index, job, min(job['count'], request_capacity(job))))
         else:
             tasks.extend(new_task(index, job, 1) for _ in range(job['count']))
+    if session and tasks:
+        # 会话字段只放在第一个初始任务上；其余任务和补缺任务都不带，追加进它所在的会话。
+        tasks[0]['payload'].update(session)
+        tasks[0]['carriesSession'] = True
     return tasks
 
 
@@ -76,7 +80,8 @@ def parallel(pool, tasks, function):
 
 
 def execute_batch(jobs: list[dict], output_dir: Path, *, concurrency=5,
-                  interval=20, timeout=21600, service_url=None, download=False) -> dict:
+                  interval=20, timeout=21600, service_url=None, download=False,
+                  session: dict | None = None) -> dict:
     validate_options(concurrency, interval, timeout)
     if not jobs or any(type(job['count']) is not int or job['count'] < 1 for job in jobs) or sum(job['count'] for job in jobs) > 100:
         raise ValueError('批量目标总数必须为1–100')
@@ -91,7 +96,7 @@ def execute_batch(jobs: list[dict], output_dir: Path, *, concurrency=5,
     # 提交前先检查认证，避免无密钥时产生不确定的本地任务。
     api_headers()
     root = base_url(service_url)
-    state = {'status': 'running', 'jobs': jobs, 'tasks': initial_tasks(jobs),
+    state = {'status': 'running', 'jobs': jobs, 'tasks': initial_tasks(jobs, session),
              'requestedCount': sum(job['count'] for job in jobs), 'completedCount': 0,
              'baseUrl': root, 'stateFile': str(output_dir / 'batch.json')}
     started = time.monotonic()
@@ -121,18 +126,28 @@ def execute_batch(jobs: list[dict], output_dir: Path, *, concurrency=5,
             raise GatewayError('Generation response must be a JSON object')
         return response
 
+    def record_submission(task, response, error):
+        if error:
+            rejected = getattr(error, 'status', None) in {400, 401, 402, 403, 404, 422, 429}
+            task.update(status='rejected' if rejected else 'submission_unknown', error=str(error))
+        else:
+            task.update(generationId=response['generationId'], status='pending', submission=response)
+        save_state(state, output_dir)
+
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
         while True:
             prepared = [t for t in state['tasks'] if t['status'] == 'prepared']
             stage = time.monotonic()
+            opening = [t for t in prepared if t.get('carriesSession')]
+            rest = [t for t in prepared if not t.get('carriesSession')]
+            # 带会话字段的任务先单独提交，有了受理结果再并发其余任务。若同时提交，
+            # 其余任务可能先追加进当天旧会话，新会话里只剩第一个任务。
+            # 第一个任务未受理时其余任务照常提交，会话以各任务响应里的 session 为准。
+            for task, response, error in parallel(pool, opening, submit):
+                record_submission(task, response, error)
             # 所有创建请求完成受理后才开始轮询；单个创建失败不取消其它任务。
-            for task, response, error in parallel(pool, prepared, submit):
-                if error:
-                    rejected = getattr(error, 'status', None) in {400, 401, 402, 403, 404, 422, 429}
-                    task.update(status='rejected' if rejected else 'submission_unknown', error=str(error))
-                else:
-                    task.update(generationId=response['generationId'], status='pending', submission=response)
-                save_state(state, output_dir)
+            for task, response, error in parallel(pool, rest, submit):
+                record_submission(task, response, error)
             if prepared:
                 print(json.dumps({'phase': 'submit', 'tasks': len(prepared), 'elapsedSeconds': round(time.monotonic() - stage, 3)}), file=sys.stderr)
 

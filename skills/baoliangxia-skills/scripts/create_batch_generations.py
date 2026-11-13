@@ -9,6 +9,7 @@ from pathlib import Path
 
 from _batch import execute_batch, initial_tasks, validate_options
 from _common import GatewayError, fail, print_json
+from _generation import session_fields
 from create_model_generation import build_parser, parse_args, prepare_generation
 from _models import catalog_rows
 
@@ -88,13 +89,18 @@ def main():
         return
     validate_options(args.concurrency, args.interval, args.timeout)
     jobs = prepare_jobs(args)
+    # 会话参数是批次级的：只写进第一个初始任务，jobs-file 每一项不接受会话字段。
+    session = session_fields(args.new_session, args.session_title)
     if args.dry_run:
-        print_json({'jobs': jobs, 'initialTasks': initial_tasks(jobs), 'concurrency': args.concurrency,
-                    'note': '先提交初始任务，再集中轮询；数量型图片仅在completed后按实际缺口补交'})
+        note = '先提交初始任务，再集中轮询；数量型图片仅在completed后按实际缺口补交'
+        if session:
+            note += '；第一个任务带会话字段并单独先提交，受理后其余任务再并发'
+        print_json({'jobs': jobs, 'initialTasks': initial_tasks(jobs, session), 'concurrency': args.concurrency,
+                    'note': note})
         return
     directory = Path(args.output_dir or f'baoliangxia_results/batch_{uuid.uuid4()}')
     result = execute_batch(jobs, directory, concurrency=args.concurrency, interval=args.interval,
-                           timeout=args.timeout, service_url=args.base_url, download=True)
+                           timeout=args.timeout, service_url=args.base_url, download=True, session=session)
     print_json(result)
     if result['status'] != 'completed' or any(t.get('downloadError') for t in result['tasks']):
         raise SystemExit(2)

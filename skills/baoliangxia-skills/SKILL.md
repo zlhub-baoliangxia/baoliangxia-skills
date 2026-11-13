@@ -1,7 +1,7 @@
 ---
 name: baoliangxia-skill
 description: 爆量匣 (baoliangxia) AI 生图、生视频技能 - 通过 Agent Gateway 调用 Seedream、Seedance、GPT Image 2、Kling、Wan、MiniMax-H3、Vidu、HappyHorse、即梦视频等模型。覆盖场景：文生图、图生图、参考图生成、文生视频、图生视频、首尾帧、参考视频/音频生成、数字人口播、对口型（lip-sync）、视频超分/提升清晰度、剧集带货短剧广告、本地素材上传、查询生成进度、下载生成结果、配置 API Key。当用户提到爆量匣、baoliangxia，或要求"画一张/生成一张图""做个海报""生成一段视频/广告片""把这张图做成视频""让这个人物说话""提升视频清晰度""查一下生成状态"时都应触发。Use when the user asks to generate, create, draw, edit, modify, upscale, lip-sync, or check any image, video, or media asset through baoliangxia/爆量匣, including local media upload, generation status, downloads, API-key setup, or garbled Chinese REST prompts.
-version: 1.0.3
+version: 1.0.4
 display_name: baoliangxia-skill
 display_name_en: Baoliangxia · AI Image & Video
 description_zh: 通过爆量匣（baoliangxia）Agent Gateway 生成图片与视频，覆盖文生图、图生图、参考图/参考视频/参考音频驱动、首尾帧、数字人口播与对口型、视频超分、剧集带货短剧广告，并支持本地素材上传、生成进度查询与结果下载。默认图片模型 doubao-seedream-4.5，默认视频模型 doubao-seedance-2.0。
@@ -25,6 +25,8 @@ metadata:
 # baoliangxia-skill
 
 Use the bundled Python scripts to call baoliangxia-skill. Preserve the user's prompt unless they explicitly request rewriting.
+
+For requests to replicate a viral image or video, including action replication or high-fidelity replication, follow the dedicated workflow in [viral-replication/SKILL.md](viral-replication/SKILL.md). Do not route those requests through ordinary generation.
 
 ## First-use guidance
 
@@ -114,6 +116,7 @@ Do not substitute an upstream documentation name such as `gpt-image-2-async` or 
 3. Translate user intent to flags using the reference's **参数拼装** table. Omit `--aspect-ratio` and `--resolution` when the user did not specify them, so the script can apply the model default. The script also supplies declared Gateway option defaults; pass optional controls only when the user requests a different value.
    For Gateway-exposed model controls, use repeatable `--option KEY=VALUE`; `--watermark true|false` is shorthand for the model's `watermark` option. Boolean options accept only lowercase `true` or `false`. Repeat `--reference-audio-id ID` for reference audio; do not combine it with legacy `--audio-upload-id`. Reference audio is source material, while options such as `audio=false` control generated sound.
 4. If the request appears under **不可用能力**, stop before submission. Do not silently drop it, approximate it with another field, or hide it in metadata.
+   Add `--new-session` / `--session-title` only as described in **Generate-page session**.
 5. For multiple outputs or independent requests, use `scripts/create_batch_generations.py` as described below. For one output, run `scripts/create_model_generation.py` and retain `generationId` plus `idempotencyKey`.
 6. The batch script waits and downloads automatically. For a single task, run `scripts/query_generation.py GENERATION_ID --wait --output-dir OUTPUT_DIR`.
 7. Present the result using the fixed structure in **Result presentation**.
@@ -134,6 +137,22 @@ Use `create_batch_generations.py "PROMPT" --model MODEL --count N` for the same 
 
 Each request gets a separate idempotency key saved in `OUTPUT_DIR/batch.json` before submission. A 429 retries the same key with the server's delay (at most 3 attempts); existing Gateway queues and concurrency limits still apply. A failed/stopped task, zero outputs, uncertain submission, query timeout, or download error never triggers an automatic replacement generation. Report partial results and the remaining count. On timeout, continue querying the saved generation IDs. For uncertain submission, replay only the exact saved request with its saved key; never restart the batch with fresh keys. See the batch reference for recovery. Never report a whole batch as successful until every requested output is available locally.
 
+## Generate-page session
+
+The server files every image/video created through the API into a conversation on the 爆量匣 generate page. By default, results go into today's latest API conversation, titled by date (`11月10日`, then `11月10日-1`, …). A new day starts a new conversation automatically; never compute dates or pass anything for that.
+
+| User intent | Flags |
+|---|---|
+| Nothing said about grouping (default) | none |
+| Explicitly asks for a new/separate conversation or group, such as 新开一个对话、单独放一组、换个分组 | `--new-session` |
+| Also names that new group, such as 新开一个叫「活动A」的对话 | `--new-session --session-title "活动A"` |
+
+- `--session-title` only names a conversation the server creates for this request. Without `--new-session` it is used only when today has no API conversation yet; otherwise the server ignores it and does not rename anything. Do not use it to rename an existing conversation.
+- Titles keep at most 50 characters after control characters and surrounding spaces are removed; a blank title means no title (the date title is used). The script rejects a longer title before submission; shorten it with the user rather than cutting it silently.
+- Both script entry points accept the flags. In a batch they are batch-level, not per-row in `--jobs-file`: only the first initial task carries them, it is submitted alone first, and the remaining tasks plus every top-up are submitted after it and append to the same conversation.
+- Use the flags for one request only. A later request in the same chat goes back to the default unless the user asks for a new conversation again.
+- An older server rejects these fields with HTTP 400 (REST does not accept unknown fields). If that happens, tell the user grouping is not available yet and resubmit without the flags only if the user agrees.
+
 ## Result presentation
 
 After a generation reaches `completed` and the files are downloaded, reply with the fixed structure below. Write it in the user's language (default 中文) and keep the section labels exactly as shown. Show the media itself (image preview or video file) alongside this text when the Agent supports it.
@@ -150,6 +169,8 @@ After a generation reaches `completed` and the files are downloaded, reply with 
 
 **文件**
 `<absolute path of the downloaded file>`
+
+**会话**：已放入爆量匣生成页的「<session.title>」会话
 
 本次生成消耗约 <N> 积分。   <!-- optional: only when the Gateway reports a cost -->
 
@@ -169,6 +190,7 @@ Rules:
 2. **规格.** One line, items separated by ` · `. The model identifier is wrapped in backticks. Fill the ratio, resolution, pixel size, and file size or duration from the actual result or the submitted parameters, never from memory. Drop an item rather than guess it.
 3. **内容要点.** 3 bullets or one compact paragraph describing what is actually in the result: subject and scene, composition or camera, color and style. Describe what you can see or what the prompt specified. Do not invent details.
 4. **文件.** Give the full local path of every downloaded file in a code span, one per line. For several outputs, list them in order.
+   **会话.** Always include this line right after 文件. Take the title from `session.title` in the creation response (the JSON printed by `create_model_generation.py`, or `tasks[].submission.session.title` in the batch result). It tells the user which conversation on the 爆量匣 generate page holds the result, for example `11月10日` or `11月10日-1`. Copy the title exactly; do not rebuild it from today's date. For a batch whose tasks report different titles, list each distinct title once, in submission order. If no creation response carries `session.title` (for example an older server), omit the line rather than guess. Never show `session.id`.
 5. **说明.** Include this section only when something needs explaining. Typical cases: the user left the ratio or resolution unset so the model default was used (say which value and why), the user's wording was only partly specific (for example 只说了"横版"), or a requested capability was unavailable. Omit the whole section when nothing needs explaining.
 6. **积分消耗.** Mention `本次生成消耗约 N 积分` right after 文件 only when the Gateway response reports a cost. Never estimate or invent it.
 7. **可调整方向.** Offer 2–4 short, concrete options the user can pick. For a completed result with a known resolution, include one recommendation based on its current tier, the user's intended use, and the selected model reference's supported resolutions:
@@ -177,7 +199,7 @@ Rules:
    - If the current resolution or supported tiers are unknown, offer other adjustments instead of guessing a resolution recommendation. For failed or stopped tasks, follow rule 1.
    Keep the remaining options relevant to the result, such as a different ratio, camera angle, color mood, or adding or removing an element. Recommend only supported changes; these are suggestions for the user to choose, not authorization to regenerate. Do not invent cost or generation-time savings.
 8. **Closing line.** End with exactly one short invitation, `告诉我要改哪一点即可。`, and nothing after it.
-9. **Do not** paste raw JSON, `generationId`, `idempotencyKey`, endpoints, or script output into this reply unless the user asks.
+9. **Do not** paste raw JSON, `generationId`, `idempotencyKey`, `session.id`, endpoints, or script output into this reply unless the user asks. The session title in 会话 is not an ID and is always shown.
 
 Example for a text-to-image result:
 
@@ -193,6 +215,8 @@ Example for a text-to-image result:
 
 **文件**
 `C:\Users\me\baoliangxia_results\GENERATION_ID\01.jpg`
+
+**会话**：已放入爆量匣生成页的「11月10日」会话
 
 **说明**
 - 你只指定了"横版"，未指定比例与分辨率，因此按模型默认出图：比例取 16:9 横版，分辨率采用 2K。
@@ -214,6 +238,8 @@ python3 {baseDir}/scripts/create_model_generation.py "USER_PROMPT" \
 python3 {baseDir}/scripts/upload_file.py /path/to/reference.png
 python3 {baseDir}/scripts/create_model_generation.py "USER_PROMPT" \
   --model doubao-seedream-4.5 --input-upload-id upl_xxx
+python3 {baseDir}/scripts/create_model_generation.py "USER_PROMPT" \
+  --model doubao-seedance-2.0 --new-session --session-title "活动A"
 python3 {baseDir}/scripts/query_generation.py GENERATION_ID --wait \
   --output-dir /path/to/baoliangxia_results/GENERATION_ID
 ```
@@ -234,6 +260,8 @@ For an uncertain retry of the same logical request, reuse the returned `idempote
 | Copying a sample ratio or resolution when the user did not ask for one | Omit `--aspect-ratio` and `--resolution` and let the script apply the model default |
 | Loading every model reference | Load only the selected row's reference |
 | Telling a first-time user, or a user with no key, only to set an environment variable | Send them to https://baoliangxia.com/ to register or log in, then bottom-left avatar → API/CLI → create their own key |
+| Passing `--new-session` on every request, or because the date changed | Pass it only when the user explicitly asks for a new conversation/group; the server starts a new day by itself |
+| Using `--session-title` to rename an existing conversation, or putting session fields in `--jobs-file` rows | The title only names a newly created conversation; in a batch, pass the flags once on the command line |
 
 ## Installation
 
