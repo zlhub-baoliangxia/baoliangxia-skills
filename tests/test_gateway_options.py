@@ -99,6 +99,19 @@ class GatewayOptionTests(unittest.TestCase):
         self.assertEqual(nano["options"]["imageSize"], "2K")
         self.assertFalse(MODELS["zl-pep-image-2.5-flare-async"].max_outputs)
 
+    def test_output_duration_is_at_most_15_seconds(self):
+        models = (
+            "doubao-seedance-2.0", "doubao-seedance-2.0-fast", "doubao-seedance-2.0-mini",
+            "happyhorse-1.1", "jielan-video", "jielan-video-lite", "jielan-video-mini",
+        )
+        for model in models:
+            with self.subTest(model=model):
+                self.assertEqual(MODELS[model].duration_max, 15)
+                _spec, payload = prepare_generation(parse_args(["p", "--model", model, "--duration", "15"]))
+                self.assertEqual(payload["duration"], 15)
+                with self.assertRaisesRegex(ValueError, "at most 15"):
+                    prepare_generation(parse_args(["p", "--model", model, "--duration", "16"]))
+
     def test_model_specific_options_and_defaults(self):
         cases = [
             ("doubao-seedream-4.5", ["--watermark", "true"], {"watermark": True}),

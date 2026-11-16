@@ -15,7 +15,7 @@ Omitted `--resolution` becomes uppercase `720P`. Omitted `--aspect-ratio` become
 
 | Intent | Flag | Rule |
 |---|---|---|
-| Output seconds | `--duration N` | Positive integer |
+| Output seconds | `--duration N` | Integer `1`–`15` |
 | Aspect ratio | `--aspect-ratio VALUE` | `9:16`, `16:9`, or `1:1`; omit for image-driven modes when the upstream route determines it |
 | Resolution | `--resolution VALUE` | Exact uppercase `720P` or `1080P` |
 | Primary image | `--image-upload-id ID` | Selects image-driven routing |

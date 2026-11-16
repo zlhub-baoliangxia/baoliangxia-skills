@@ -93,7 +93,7 @@ MODELS: dict[str, ModelSpec] = {
     ),
     "doubao-seedance-2.0": ModelSpec(
         "videos", "references/models/doubao-seedance-2.0.md",
-        ratios=VIDEO_RATIOS, resolutions=("480p", "720p", "1080p"), duration_min=1,
+        ratios=VIDEO_RATIOS, resolutions=("480p", "720p", "1080p"), duration_min=1, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},
@@ -102,7 +102,7 @@ MODELS: dict[str, ModelSpec] = {
     ),
     "doubao-seedance-2.0-fast": ModelSpec(
         "videos", "references/models/doubao-seedance-2.0.md",
-        ratios=VIDEO_RATIOS, resolutions=("480p", "720p"), duration_min=1,
+        ratios=VIDEO_RATIOS, resolutions=("480p", "720p"), duration_min=1, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},
@@ -111,7 +111,7 @@ MODELS: dict[str, ModelSpec] = {
     ),
     "doubao-seedance-2.0-mini": ModelSpec(
         "videos", "references/models/doubao-seedance-2.0.md",
-        ratios=VIDEO_RATIOS, resolutions=("480p", "720p"), duration_min=1,
+        ratios=VIDEO_RATIOS, resolutions=("480p", "720p"), duration_min=1, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},
@@ -131,12 +131,12 @@ MODELS: dict[str, ModelSpec] = {
     "happyhorse-1.1": ModelSpec(
         "videos", "references/models/happyhorse-1.1.md",
         ratios=("9:16", "16:9", "1:1"), resolutions=("720P", "1080P"),
-        duration_min=1, max_reference_images=20, max_reference_videos=20,
+        duration_min=1, duration_max=15, max_reference_images=20, max_reference_videos=20,
         default_ratio="16:9", default_resolution="720P", omit_default_ratio_with_media=True,
     ),
     "jielan-video": ModelSpec(
         "videos", "references/models/jielan-video.md",
-        ratios=VIDEO_RATIOS, resolutions=("720p", "1080p", "2k", "4k"), duration_min=1,
+        ratios=VIDEO_RATIOS, resolutions=("720p", "1080p", "2k", "4k"), duration_min=1, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},
@@ -145,7 +145,7 @@ MODELS: dict[str, ModelSpec] = {
     ),
     "jielan-video-lite": ModelSpec(
         "videos", "references/models/jielan-video.md",
-        ratios=VIDEO_RATIOS, resolutions=("720p", "1080p"), duration_min=1,
+        ratios=VIDEO_RATIOS, resolutions=("720p", "1080p"), duration_min=1, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},
@@ -154,7 +154,7 @@ MODELS: dict[str, ModelSpec] = {
     ),
     "jielan-video-mini": ModelSpec(
         "videos", "references/models/jielan-video.md",
-        ratios=VIDEO_RATIOS, resolutions=("720p", "1080p"), duration_min=1,
+        ratios=VIDEO_RATIOS, resolutions=("720p", "1080p"), duration_min=1, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},

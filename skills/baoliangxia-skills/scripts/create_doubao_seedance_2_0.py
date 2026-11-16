@@ -23,8 +23,8 @@ def parse_args():
 
 def main():
     args = parse_args()
-    if args.duration is not None and args.duration <= 0:
-        raise ValueError("--duration must be a positive integer")
+    if args.duration is not None and not 1 <= args.duration <= 15:
+        raise ValueError("--duration must be between 1 and 15")
     payload = {"model": "doubao-seedance-2.0", "prompt": args.prompt}
     append_if_present(payload, "duration", args.duration)
     append_if_present(payload, "aspectRatio", args.aspect_ratio)

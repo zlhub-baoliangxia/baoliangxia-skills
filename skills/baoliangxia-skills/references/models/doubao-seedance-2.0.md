@@ -15,7 +15,7 @@ Omitted `--aspect-ratio` becomes `16:9`. Omitted `--resolution` becomes `720p` f
 
 | Intent | Flag | Rule |
 |---|---|---|
-| Output seconds | `--duration N` | Positive integer |
+| Output seconds | `--duration N` | Integer `1`–`15` |
 | Aspect ratio | `--aspect-ratio VALUE` | `9:16`, `16:9`, `3:4`, `4:3`, or `1:1` |
 | Resolution | `--resolution VALUE` | Standard: `480p`/`720p`/`1080p`; fast/mini: `480p`/`720p` |
 | Primary image | `--image-upload-id ID` | General driving image; not an explicit frame role |
