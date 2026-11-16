@@ -291,7 +291,7 @@ Run this only after the user's request is finished and any result has already be
 python3 {baseDir}/scripts/check_update.py
 ```
 
-- Allow about 3 seconds. The script stops its own network read after 2 seconds and records the attempt first, so a slow or failed check is not repeated later the same day.
+- Allow about 3 seconds. The script reads the published skill file from the repository's `master/skills/baoliangxia-skills/SKILL.md` path. It records the 24-hour cooldown only after receiving a valid version for the matching skill; a failed request or changed source URL can be retried.
 - If this command would need its own network-approval prompt, skip it. Do not ask the user.
 - Empty output, a timeout, or any error: say nothing about updates.
 - If it prints a line, append that line unchanged after the result. Do not turn it into a question, do not wait for an answer, and do not run `npx skills update` unless the user then asks to update the skill.

@@ -19,7 +19,7 @@ from pathlib import Path
 
 FETCH_TIMEOUT_SECONDS = 2
 FETCH_BYTES = 4096
-REMOTE_TEMPLATE = "https://raw.githubusercontent.com/zlhub-baoliangxia/baoliangxia-skills/main/skills/{name}/SKILL.md"
+REMOTE_SKILL_URL = "https://raw.githubusercontent.com/zlhub-baoliangxia/baoliangxia-skills/master/skills/baoliangxia-skills/SKILL.md"
 NOTICE = "爆量匣技能有新版本 {remote}（当前 {local}）。说一声「更新技能」我就帮你更新；更新后需要新开一次对话才生效。"
 SAFE_NAME = re.compile(r"[a-z0-9-]+")
 
@@ -79,7 +79,11 @@ def format_time(now: datetime) -> str:
     return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def is_due(entry: dict, now: datetime) -> bool:
+def is_due(entry: dict, now: datetime, remote_url: str) -> bool:
+    # A changed URL invalidates the old cooldown, including records written by
+    # older versions of this checker that did not save the URL.
+    if entry.get("checkedUrl") != remote_url:
+        return True
     raw = entry.get("checkedAt")
     if not isinstance(raw, str):
         return True
@@ -131,28 +135,24 @@ def run_check(*, skill_dir: Path, stamp_path: Path, now: datetime, fetch) -> str
     stamp = load_stamp(Path(stamp_path))
     current = stamp.get(name)
     entry = dict(current) if isinstance(current, dict) else {}
-    if name and not is_due(entry, now):
+    if name and not is_due(entry, now, REMOTE_SKILL_URL):
         return ""
 
-    entry["checkedAt"] = format_time(now)
-    if parse_version(local):
-        entry["localVersion"] = local
-    if name:
-        stamp[name] = entry
-        if not write_stamp(Path(stamp_path), stamp):
-            return ""
     if not parse_version(local) or not SAFE_NAME.fullmatch(name):
         return ""
 
     try:
-        remote_text = fetch(REMOTE_TEMPLATE.format(name=name))
+        remote_text = fetch(REMOTE_SKILL_URL)
     except Exception:
         return ""
-    remote = parse_frontmatter(remote_text or "").get("version") or ""
-    if not parse_version(remote):
+    remote_meta = parse_frontmatter(remote_text or "")
+    remote_name = remote_meta.get("name") or ""
+    remote = remote_meta.get("version") or ""
+    if remote_name != name or not parse_version(remote):
         return ""
 
     entry["checkedAt"] = format_time(now)
+    entry["checkedUrl"] = REMOTE_SKILL_URL
     entry["localVersion"] = local
     entry["remoteVersion"] = remote
     message = ""
