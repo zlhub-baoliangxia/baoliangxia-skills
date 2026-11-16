@@ -1,7 +1,7 @@
 ---
 name: baoliangxia-skill
 description: 爆量匣 (baoliangxia) AI 生图、生视频技能 - 通过 Agent Gateway 调用 Seedream、Seedance、GPT Image 2、Kling、Wan、MiniMax-H3、Vidu、HappyHorse、即梦视频等模型。覆盖场景：文生图、图生图、参考图生成、文生视频、图生视频、首尾帧、参考视频/音频生成、数字人口播、对口型（lip-sync）、视频超分/提升清晰度、剧集带货短剧广告、本地素材上传、查询生成进度、下载生成结果、配置 API Key。当用户提到爆量匣、baoliangxia，或要求"画一张/生成一张图""做个海报""生成一段视频/广告片""把这张图做成视频""让这个人物说话""提升视频清晰度""查一下生成状态"时都应触发。Use when the user asks to generate, create, draw, edit, modify, upscale, lip-sync, or check any image, video, or media asset through baoliangxia/爆量匣, including local media upload, generation status, downloads, API-key setup, or garbled Chinese REST prompts.
-version: 1.0.6
+version: 1.0.7
 display_name: baoliangxia-skill
 display_name_en: Baoliangxia · AI Image & Video
 description_zh: 通过爆量匣（baoliangxia）Agent Gateway 生成图片与视频，覆盖文生图、图生图、参考图/参考视频/参考音频驱动、首尾帧、数字人口播与对口型、视频超分、剧集带货短剧广告，并支持本地素材上传、生成进度查询与结果下载。默认图片模型 doubao-seedream-4.5，默认视频模型 doubao-seedance-2.0。
@@ -138,6 +138,7 @@ python3 {baseDir}/scripts/create_video_super_resolution.py \
 5. For multiple outputs or independent requests, use `scripts/create_batch_generations.py` as described below. For one output, run `scripts/create_model_generation.py` and retain `generationId` plus `idempotencyKey`.
 6. The batch script waits and downloads automatically. For a single task, run `scripts/query_generation.py GENERATION_ID --wait --output-dir OUTPUT_DIR`.
 7. Present the result using the fixed structure in **Result presentation**.
+8. After the result is presented, run the update check. Do not run it before any earlier step.
 
 All scripts accept `--help`. On Windows, use `python` or `py -3` when `python3` is unavailable.
 
@@ -281,6 +282,20 @@ For an uncertain retry of the same logical request, reuse the returned `idempote
 | Telling a first-time user, or a user with no key, only to set an environment variable | Send them to https://baoliangxia.com/ to register or log in, then bottom-left avatar → API/CLI → create their own key |
 | Passing `--new-session` on every request, or because the date changed | Pass it only when the user explicitly asks for a new conversation/group; the server starts a new day by itself |
 | Using `--session-title` to rename an existing conversation, or putting session fields in `--jobs-file` rows | The title only names a newly created conversation; in a batch, pass the flags once on the command line |
+
+## Update check
+
+Run this only after the user's request is finished and any result has already been presented. Do not run it before upload, submission, waiting, or download, and do not delay those steps for it. Skip it during first-use guidance, when the skill is not installed, Python is missing, or the API key is missing.
+
+```bash
+python3 {baseDir}/scripts/check_update.py
+```
+
+- Allow about 3 seconds. The script stops its own network read after 2 seconds and records the attempt first, so a slow or failed check is not repeated later the same day.
+- If this command would need its own network-approval prompt, skip it. Do not ask the user.
+- Empty output, a timeout, or any error: say nothing about updates.
+- If it prints a line, append that line unchanged after the result. Do not turn it into a question, do not wait for an answer, and do not run `npx skills update` unless the user then asks to update the skill.
+- Updating still follows **Installation**. Ask permission, then run `npx skills update baoliangxia-skills -g -y` (or `-p` for a project install). Tell the user to open a new conversation afterward.
 
 ## Installation
 

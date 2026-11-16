@@ -1,5 +1,6 @@
 ---
 name: baoliangxia-viral-replication
+version: 1.0.0
 description: Use when the user asks to复刻爆款图片或视频、动作复刻、高度复刻、替换产品素材并生成同款内容 through 爆量匣/baoliangxia Agent Gateway. Covers image replication, 动作复刻（replicationMode=partial）and 高度复刻（replicationMode=full）, uploaded source media, task progress and result download; ordinary image/video generation belongs to baoliangxia-skills.
 ---
 
@@ -124,3 +125,17 @@ Windows 可用 `python` 或 `py -3`。脚本均支持 `--help`。请求文件只
 ## 结果呈现
 
 按“复刻状态、已完成张数或成片套数、失败/部分成功数量、文件、可调整方向”的顺序简洁回复。视频片段数和成片套数分别写；不能把片段完成视为成片完成。`partial` 时逐项列出可用文件。没有产物时不写“已生成”。若高度复刻未开放，说明服务端拒绝原因，不静默降级为动作复刻。建议调整只作为下一次请求的选项，用户确认前不重新生成。
+
+## 更新检查
+
+用户这次请求已经完成、结果已经给出之后再运行。不要在上传、提交、等待或下载之前运行，也不要因此推迟这些步骤。首次引导、技能未安装、没有 Python 或没有 API Key 时跳过。
+
+```bash
+python3 {baseDir}/scripts/check_update.py
+```
+
+- 给这个命令大约 3 秒。脚本自己的网络读取在 2 秒后停止，并且会先记下这次检查，所以同一次失败或变慢不会在当天稍后反复重试。
+- 如果运行它需要单独的联网授权，直接跳过，不要为此询问用户。
+- 没有输出、超时或报错：不要提及更新。
+- 如果打印了一行字，原样接在结果后面。不要改成提问，不要停下来等回答，用户没有要求更新时不要运行 `npx skills update`。
+- 用户要求更新时，先确认，再执行 `npx skills update baoliangxia-viral-replication -g -y`（项目级用 `-p`）。更新不改 API Key。完成后告诉用户新开一次对话。
