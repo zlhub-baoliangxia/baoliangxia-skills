@@ -1,7 +1,7 @@
 ---
 name: baoliangxia-skill
 description: 爆量匣 (baoliangxia) AI 生图、生视频技能 - 通过 Agent Gateway 调用 Seedream、Seedance、GPT Image 2、Kling、Wan、MiniMax-H3、Vidu、HappyHorse、即梦视频等模型。覆盖场景：文生图、图生图、参考图生成、文生视频、图生视频、首尾帧、参考视频/音频生成、数字人口播、对口型（lip-sync）、视频超分/提升清晰度、剧集带货短剧广告、本地素材上传、查询生成进度、下载生成结果、配置 API Key。当用户提到爆量匣、baoliangxia，或要求"画一张/生成一张图""做个海报""生成一段视频/广告片""把这张图做成视频""让这个人物说话""提升视频清晰度""查一下生成状态"时都应触发。Use when the user asks to generate, create, draw, edit, modify, upscale, lip-sync, or check any image, video, or media asset through baoliangxia/爆量匣, including local media upload, generation status, downloads, API-key setup, or garbled Chinese REST prompts.
-version: 1.0.7
+version: 1.0.8
 display_name: baoliangxia-skill
 display_name_en: Baoliangxia · AI Image & Video
 description_zh: 通过爆量匣（baoliangxia）Agent Gateway 生成图片与视频，覆盖文生图、图生图、参考图/参考视频/参考音频驱动、首尾帧、数字人口播与对口型、视频超分、剧集带货短剧广告，并支持本地素材上传、生成进度查询与结果下载。默认图片模型 doubao-seedream-4.5，默认视频模型 doubao-seedance-2.0。
@@ -25,6 +25,12 @@ metadata:
 # baoliangxia-skill
 
 Use the bundled Python scripts to call baoliangxia-skill. Preserve the user's prompt unless they explicitly request rewriting.
+
+## Invocation update check
+
+At the start of every invocation of this skill, run `scripts/check_update.py` before choosing a workflow or replying. This includes first-use guidance, capability questions, requests with no API key, and requests that do not generate media. The script itself skips the network check until 24 hours have passed since the previous successful check; never add separate exceptions based on the request type or API-key state.
+
+Run the check without making the user's task wait on it. Continue independent preparation and the requested workflow while it runs. Do not install an update automatically. If the script prints a notice, append that exact line to the current reply, after any generated result; if it prints nothing, do not mention the check.
 
 For requests to replicate a viral image or video, including action replication or high-fidelity replication, use the dedicated sibling skill [baoliangxia-viral-replication](../baoliangxia-viral-replication/SKILL.md). Do not route those requests through ordinary image or video generation.
 
@@ -138,7 +144,7 @@ python3 {baseDir}/scripts/create_video_super_resolution.py \
 5. For multiple outputs or independent requests, use `scripts/create_batch_generations.py` as described below. For one output, run `scripts/create_model_generation.py` and retain `generationId` plus `idempotencyKey`.
 6. The batch script waits and downloads automatically. For a single task, run `scripts/query_generation.py GENERATION_ID --wait --output-dir OUTPUT_DIR`.
 7. Present the result using the fixed structure in **Result presentation**.
-8. After the result is presented, run the update check. Do not run it before any earlier step.
+8. The update check is already started at skill invocation. Do not wait for it before uploading, submitting, waiting, downloading, or presenting results.
 
 All scripts accept `--help`. On Windows, use `python` or `py -3` when `python3` is unavailable.
 
@@ -285,16 +291,16 @@ For an uncertain retry of the same logical request, reuse the returned `idempote
 
 ## Update check
 
-Run this only after the user's request is finished and any result has already been presented. Do not run it before upload, submission, waiting, or download, and do not delay those steps for it. Skip it during first-use guidance, when the skill is not installed, Python is missing, or the API key is missing.
+Run this at the beginning of every skill invocation, before first-use guidance or any other response. Do not skip it because the user is asking a question, lacks an API key, or has not asked for generation. The check does not read or require the API key. On Windows, use `python` or `py -3` if `python3` is unavailable. If no Python interpreter is available, continue the requested workflow and explain that the update check could not run only when useful; do not install Python just for this check.
 
 ```bash
 python3 {baseDir}/scripts/check_update.py
 ```
 
-- Allow about 3 seconds. The script reads the published skill file from the repository's `master/skills/baoliangxia-skills/SKILL.md` path. It records the 24-hour cooldown only after receiving a valid version for the matching skill; a failed request or changed source URL can be retried.
+- Allow about 3 seconds. The script reads the published skill file from the repository's `master/skills/baoliangxia-skills/SKILL.md` path. It contacts the remote source only when 24 hours have passed since the last successful version check. A failed request or invalid remote version does not start the cooldown, so a later invocation can retry.
 - If this command would need its own network-approval prompt, skip it. Do not ask the user.
 - Empty output, a timeout, or any error: say nothing about updates.
-- If it prints a line, append that line unchanged after the result. Do not turn it into a question, do not wait for an answer, and do not run `npx skills update` unless the user then asks to update the skill.
+- If it prints a line, append that line unchanged to the current reply, after any generated result. Do not turn it into a question, do not wait for an answer, and do not run `npx skills update` unless the user then asks to update the skill.
 - Updating still follows **Installation**. Ask permission, then run `npx skills update baoliangxia-skills -g -y` (or `-p` for a project install). Tell the user to open a new conversation afterward.
 
 ## Installation
