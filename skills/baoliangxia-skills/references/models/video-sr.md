@@ -9,7 +9,7 @@ python3 {baseDir}/scripts/create_video_super_resolution.py \
   --generation-id GENERATION_ID --target-resolution 1080p
 ```
 
-也可以重复 `--upload-id` 或 `--file`。合计 1～10 条。`--plan-key` 缺省 `general`。目标档位只接受 `720p`、`1080p`、`2k`、`4k`，且必须高于源视频；脚本不探测文件。查询用 `scripts/query_generation.py`。
+也可以重复 `--upload-id` 或 `--file`。合计 1～10 条。不传 `--plan-key` 时请求体不带 `planKey`，由当前环境模型目录的 `defaultSrPlanKey` 决定画质方案。目标档位只接受 `720p`、`1080p`、`2k`、`4k`，且必须高于源视频；脚本不探测文件。查询用 `scripts/query_generation.py`。
 
 2 条及以上时，退出码与 `create_batch_generations.py` 一致：0 表示全部完成且全部下载到本地；2 表示部分完成、仍在处理、未完成或有下载失败。屏幕输出的每条任务带 `error` / `queryError` / `downloadError`（有才出现），并给出 `remainingCount`。
 
@@ -21,7 +21,7 @@ python3 {baseDir}/scripts/create_video_super_resolution.py \
 | 已完成上传 | `--upload-id ID` | 上传流程得到的视频 uploadId |
 | 本地视频 | `--file PATH` | 先走既有上传，再提交 uploadId |
 | 目标清晰度 | `--target-resolution VALUE` | 必填：`720p` / `1080p` / `2k` / `4k` |
-| 画质方案 | `--plan-key VALUE` | 缺省 `general` |
+| 画质方案 | `--plan-key VALUE` | 不传则不含 `planKey`，由当前环境目录的 `defaultSrPlanKey` 决定 |
 | 新会话 | `--new-session` / `--session-title` | 多条时只放在第一条 |
 
 ## 不可用能力

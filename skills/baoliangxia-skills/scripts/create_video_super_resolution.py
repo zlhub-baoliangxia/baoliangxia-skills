@@ -50,7 +50,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--upload-id", action=AppendSource, dest="sources", help="已完成的视频上传 ID，可重复")
     parser.add_argument("--file", action=AppendSource, dest="sources", help="本地视频，先上传再提交，可重复")
     parser.add_argument("--target-resolution", required=True, help="720p、1080p、2k 或 4k")
-    parser.add_argument("--plan-key", default="general", help="画质方案，缺省 general")
+    parser.add_argument("--plan-key", default=None, help="画质方案。不传时不写入请求，由当前环境模型目录的 defaultSrPlanKey 决定")
     parser.add_argument("--output-dir", help="2 条及以上时写入 batch.json 的目录")
     parser.add_argument("--concurrency", type=int, default=5)
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_SECONDS)
@@ -68,8 +68,8 @@ def normalize_resolution(value: str) -> str:
 
 
 def normalize_plan_key(value: str | None) -> str:
-    token = str(value or "").strip().lower()
-    return token or "general"
+    """空字符串表示请求体不带 planKey，交给服务端按目录 defaultSrPlanKey 选择。"""
+    return str(value or "").strip().lower()
 
 
 def validate_sources(sources: list[dict]) -> list[dict]:
@@ -92,8 +92,10 @@ def payload_for_source(source: dict, target_resolution: str, plan_key: str) -> d
         raise ValueError("generationId 与 uploadId 必须二选一")
     payload: dict[str, Any] = {
         "targetResolution": normalize_resolution(target_resolution),
-        "planKey": normalize_plan_key(plan_key),
     }
+    normalized_plan_key = normalize_plan_key(plan_key)
+    if normalized_plan_key:
+        payload["planKey"] = normalized_plan_key
     if generation_id:
         payload["generationId"] = generation_id
     else:

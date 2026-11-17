@@ -181,7 +181,7 @@ MODELS: dict[str, ModelSpec] = {
         "videos", "references/models/video-sr.md", resolutions=("720p", "1080p", "2k", "4k"),
         max_reference_videos=1, default_resolution="720p",
         unavailable_reason=(
-            "video-sr 仅用于视频提升画质，不能用于普通视频生成；请改用 scripts/create_video_super_resolution.py"
+            "video-sr 仅用于视频提升画质，不能通过视频生成接口调用；请改用 scripts/create_video_super_resolution.py"
         ),
     ),
     "vidu": ModelSpec(

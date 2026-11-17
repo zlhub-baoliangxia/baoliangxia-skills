@@ -1,7 +1,7 @@
 ---
 name: baoliangxia-skill
 description: 爆量匣 (baoliangxia) AI 生图、生视频技能 - 通过 Agent Gateway 调用 Seedream、Seedance、GPT Image 2、Kling、Wan、MiniMax-H3、Vidu、HappyHorse、即梦视频等模型。覆盖场景：文生图、图生图、参考图生成、文生视频、图生视频、首尾帧、参考视频/音频生成、数字人口播、对口型（lip-sync）、视频超分/提升清晰度、剧集带货短剧广告、本地素材上传、查询生成进度、下载生成结果、配置 API Key。当用户提到爆量匣、baoliangxia，或要求"画一张/生成一张图""做个海报""生成一段视频/广告片""把这张图做成视频""让这个人物说话""提升视频清晰度""查一下生成状态"时都应触发。Use when the user asks to generate, create, draw, edit, modify, upscale, lip-sync, or check any image, video, or media asset through baoliangxia/爆量匣, including local media upload, generation status, downloads, API-key setup, or garbled Chinese REST prompts.
-version: 1.0.8
+version: 1.0.9
 display_name: baoliangxia-skill
 display_name_en: Baoliangxia · AI Image & Video
 description_zh: 通过爆量匣（baoliangxia）Agent Gateway 生成图片与视频，覆盖文生图、图生图、参考图/参考视频/参考音频驱动、首尾帧、数字人口播与对口型、视频超分、剧集带货短剧广告，并支持本地素材上传、生成进度查询与结果下载。默认图片模型 doubao-seedream-4.5，默认视频模型 doubao-seedance-2.0。
@@ -121,7 +121,7 @@ Do not substitute an upstream documentation name such as `gpt-image-2-async` or 
 
 - `--generation-id`、`--upload-id`、`--file` 可重复，按出现顺序合计 1～10 条。超过 10 条在本地直接报错，不上传、不提交。
 - `--target-resolution` 必填，只接受 `720p`、`1080p`、`2k`、`4k`（大小写不敏感）。能否向上由服务端判断，脚本不探测文件。
-- `--plan-key` 缺省 `general`。
+- 不传 `--plan-key` 时，请求体不带 `planKey`。当前环境的模型目录用 `defaultSrPlanKey` 决定画质方案；显式传入时才写入请求。
 - `--new-session` / `--session-title` 沿用 **Generate-page session**。1 条直接提交；2 条及以上按 [references/batch-generation.md](references/batch-generation.md)：每条独立任务和独立幂等键，默认并发 5，只有第一条带会话字段并单独先提交，状态写入 `batch.json`，超时 6 小时。
 - 查询和下载沿用 `scripts/query_generation.py`。结果展示必须带 **会话** 行，标题取创建响应里的 `session.title`。
 
