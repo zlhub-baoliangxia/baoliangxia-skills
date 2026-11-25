@@ -93,7 +93,7 @@ MODELS: dict[str, ModelSpec] = {
     ),
     "doubao-seedance-2.0": ModelSpec(
         "videos", "references/models/doubao-seedance-2.0.md",
-        ratios=VIDEO_RATIOS, resolutions=("480p", "720p", "1080p"), duration_min=1, duration_max=15,
+        ratios=VIDEO_RATIOS, resolutions=("480p", "720p", "1080p"), duration_min=4, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},
@@ -102,7 +102,7 @@ MODELS: dict[str, ModelSpec] = {
     ),
     "doubao-seedance-2.0-fast": ModelSpec(
         "videos", "references/models/doubao-seedance-2.0.md",
-        ratios=VIDEO_RATIOS, resolutions=("480p", "720p"), duration_min=1, duration_max=15,
+        ratios=VIDEO_RATIOS, resolutions=("480p", "720p"), duration_min=4, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},
@@ -111,7 +111,7 @@ MODELS: dict[str, ModelSpec] = {
     ),
     "doubao-seedance-2.0-mini": ModelSpec(
         "videos", "references/models/doubao-seedance-2.0.md",
-        ratios=VIDEO_RATIOS, resolutions=("480p", "720p"), duration_min=1, duration_max=15,
+        ratios=VIDEO_RATIOS, resolutions=("480p", "720p"), duration_min=4, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},
@@ -136,7 +136,7 @@ MODELS: dict[str, ModelSpec] = {
     ),
     "jielan-video": ModelSpec(
         "videos", "references/models/jielan-video.md",
-        ratios=VIDEO_RATIOS, resolutions=("720p", "1080p", "2k", "4k"), duration_min=1, duration_max=15,
+        ratios=VIDEO_RATIOS, resolutions=("720p", "1080p", "2k", "4k"), duration_min=4, duration_max=15,
         max_reference_images=30, max_reference_videos=10, allow_audio=True,
         max_reference_audios=1,
         gateway_options={"generate_audio": None, "watermark": None},

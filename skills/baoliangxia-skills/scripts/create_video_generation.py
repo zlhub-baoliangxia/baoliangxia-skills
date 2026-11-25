@@ -6,6 +6,8 @@ import json
 import uuid
 
 from _common import GatewayError, api_headers, base_url, fail, generation_result, print_json, request_json, upload_ref
+from _models import MODELS
+from create_model_generation import validate_video_duration
 
 
 def parse_args():
@@ -27,6 +29,9 @@ def parse_args():
 
 def main():
     args = parse_args()
+    spec = MODELS.get(args.model)
+    if spec is not None:
+        validate_video_duration(args, spec)
     payload = {
         "model": args.model,
         "prompt": args.prompt,

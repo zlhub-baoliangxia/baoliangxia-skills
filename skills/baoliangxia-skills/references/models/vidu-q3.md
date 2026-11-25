@@ -15,7 +15,7 @@ Omitted `--aspect-ratio` becomes `16:9`. Omitted `--resolution` becomes `1080p` 
 
 | Intent | Flag | Rule |
 |---|---|---|
-| Duration | `--duration N` | `1`–`16` seconds |
+| Duration | `--duration N` | `1`–`16` seconds with 0–2 images; `3`–`16` seconds with 3–7 images (primary and reference images combined) |
 | Aspect ratio | `--aspect-ratio VALUE` | `9:16`, `16:9`, `3:4`, `4:3`, or `1:1` |
 | Resolution | `--resolution VALUE` | Ad: `720p`/`1080p`; Mix: `540p`/`720p`/`1080p` |
 | Product/reference images | primary image plus repeated reference-image flags | Combined maximum 7; order is preserved |

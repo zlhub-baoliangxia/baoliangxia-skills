@@ -15,7 +15,7 @@ Omitted `--aspect-ratio` becomes `16:9`. Omitted `--resolution` becomes `720p` f
 
 | Intent | Flag | Rule |
 |---|---|---|
-| Output seconds | `--duration N` | Integer `1`–`15` |
+| Output seconds | `--duration N` | `jielan-video`: integer `4`–`15` (inclusive). Lite/mini: existing catalog says `1`–`15`, but this range is not independently verified; confirm the deployment limit before submitting durations below 4 seconds |
 | Aspect ratio | `--aspect-ratio VALUE` | `9:16`, `16:9`, `3:4`, `4:3`, `1:1` |
 | Resolution | `--resolution VALUE` | Standard: `720p`/`1080p`/`2k`/`4k`; lite/mini: `720p`/`1080p` |
 | Primary image | `--image-upload-id ID` | General driving image |

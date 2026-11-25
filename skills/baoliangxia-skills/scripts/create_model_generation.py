@@ -77,10 +77,18 @@ def validate_duration(spec: ModelSpec, value: int | None) -> None:
         raise ValueError(f"--duration must be at most {spec.duration_max}")
 
 
+def validate_video_duration(args: argparse.Namespace, spec: ModelSpec) -> None:
+    validate_duration(spec, args.duration)
+    image_count = len(args.reference_image_id) + bool(args.image_upload_id)
+    if (args.model in {"viduq3-ad", "viduq3-mix"} and image_count >= 3
+            and args.duration is not None and args.duration < 3):
+        raise ValueError("--duration must be between 3 and 16 for Vidu Q3 with 3 or more images")
+
+
 def validate_common(args: argparse.Namespace, spec: ModelSpec) -> None:
     require_choice("--aspect-ratio", args.aspect_ratio, spec.ratios)
     require_choice("--resolution", args.resolution, spec.resolutions)
-    validate_duration(spec, args.duration)
+    validate_video_duration(args, spec)
 
     if args.n is not None:
         if spec.max_outputs is None:
